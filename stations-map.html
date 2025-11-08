@@ -1,0 +1,92 @@
+# Station-ratings
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>خريطة محطات المنطقة</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+body { margin:0; padding:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+#map { height: 100vh; }
+.leaflet-popup-content input {
+  width: 100%;
+  margin-top:5px;
+  padding:5px;
+  border-radius:5px;
+  border:1px solid #ccc;
+}
+.leaflet-popup-content button {
+  margin-top:5px;
+  padding:5px 10px;
+  background-color:#3f51b5;
+  color:#fff;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+.leaflet-popup-content button:hover {
+  background-color:#303f9f;
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// إعداد الخريطة
+var map = L.map('map').setView([24.7136, 46.6753], 10); // الرياض كمثال
+
+// إضافة خريطة من OpenStreetMap
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+}).addTo(map);
+
+// بيانات المحطات افتراضية (اسم، إحداثيات، ملاحظات)
+var stations = [
+  {name: "محطة 1", lat:24.7136, lng:46.6753, notes: []},
+  {name: "محطة 2", lat:24.7436, lng:46.6853, notes: []},
+  {name: "محطة 3", lat:24.7236, lng:46.6953, notes: []}
+];
+
+// إنشاء العلامات على الخريطة
+stations.forEach((station, index)=>{
+  var marker = L.marker([station.lat, station.lng]).addTo(map);
+  marker.bindPopup(getPopupContent(index));
+});
+
+// دالة توليد محتوى النافذة
+function getPopupContent(index){
+  var station = stations[index];
+  var notesList = station.notes.length ? station.notes.map(n=>"<li>"+n+"</li>").join("") : "<li>لا توجد ملاحظات بعد</li>";
+  var html = `
+    <strong>${station.name}</strong>
+    <ul id="notes-${index}">${notesList}</ul>
+    <input type="text" id="input-${index}" placeholder="أضف ملاحظة جديدة">
+    <button onclick="addNote(${index})">إضافة ملاحظة</button>
+  `;
+  return html;
+}
+
+// دالة إضافة ملاحظة
+function addNote(index){
+  var input = document.getElementById('input-'+index);
+  var value = input.value.trim();
+  if(value){
+    stations[index].notes.push(value);
+    input.value = '';
+    // تحديث المحتوى
+    var marker = map.eachLayer(function(layer){
+      if(layer instanceof L.Marker){
+        var latlng = layer.getLatLng();
+        if(latlng.lat===stations[index].lat && latlng.lng===stations[index].lng){
+          layer.setPopupContent(getPopupContent(index)).openPopup();
+        }
+      }
+    });
+  }
+}
+</script>
+</body>
+</html>
